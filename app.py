@@ -5,6 +5,9 @@ from collections import Counter
 import plotly.graph_objects as go
 import json
 import base64
+from bs4 import BeautifulSoup
+from spacy.tokens import Doc
+
 
 st.set_page_config(layout="wide")
 
@@ -16,7 +19,7 @@ state = st.session_state
 # Load the model
 @st.cache_data
 def load_model():
-    return spacy.load("herelles3Tv2")
+    return spacy.load("herellesmdfull")
 
 nlp = load_model()  # Load the model globally
 
@@ -75,9 +78,11 @@ def get_entities_json(doc, labels):
     """
     Convert entity information to a dictionary
     """
-    return {ent.text: (ent.start_char, ent.end_char, ent.label_) for ent in doc.ents if ent.label_ in labels}
+    ent_dic = {ent.text: (ent.start_char, ent.end_char, ent.label_) for ent in doc.ents if ent.label_ in labels and len(ent.text)>2}
+    print(ent_dic)
+    return ent_dic# {ent.text: (ent.start_char, ent.end_char, ent.label_) for ent in doc.ents if ent.label_ in labels and len(ent.text)>2}
 
-def display(doc, selected_labels, segment_number):
+def display__(doc, selected_labels, segment_number):
     label_colors = {"Nomc_H6": "red", "Nomc_H5": "blue", "Nomc_H4": "green", "Nomc_H3": "purple", "Nomc_H2": "orange",
                     "Nomc_H1": "orange", "Nomc_H0": "brown",  "LOC":"cyan", "GPE": "lime",  "PER": "pink", "Trig_PLU": "olive" }
 
@@ -86,6 +91,44 @@ def display(doc, selected_labels, segment_number):
     st.markdown(f"Segment ID: {segment_number}", unsafe_allow_html=True)
     st.markdown(html, unsafe_allow_html=True)
     st.markdown("\n\n----------------------\n\n", unsafe_allow_html=True)
+
+def display___(doc, selected_labels, segment_number):
+    label_colors = {"Nomc_H6": "red", "Nomc_H5": "blue", "Nomc_H4": "green", "Nomc_H3": "purple", "Nomc_H2": "orange",
+                    "Nomc_H1": "orange", "Nomc_H0": "brown",  "LOC":"cyan", "GPE": "lime",  "PER": "pink", "Trig_PLU": "olive" }
+
+    options = {"colors": label_colors, "ents": selected_labels}
+    html = displacy.render(doc, style="ent", options=options, jupyter=False)
+
+    # Parse HTML with BeautifulSoup and remove short entities
+    soup = BeautifulSoup(html, 'html.parser')
+    for mark in soup.find_all('mark'):
+        if len(mark.text.strip()) <= 2:  # Strip whitespace before checking length
+            mark.decompose()
+
+    st.markdown(f"Segment ID: {segment_number}", unsafe_allow_html=True)
+    st.markdown(str(soup), unsafe_allow_html=True)
+    st.markdown("\n\n----------------------\n\n", unsafe_allow_html=True)
+
+
+def display(doc, selected_labels, segment_number):
+    #doc = Doc(doc.vocab, words=[t.text for t in doc], spaces=[t.whitespace_ for t in doc])
+
+    label_colors = {"Nomc_H6": "red", "Nomc_H5": "blue", "Nomc_H4": "green", "Nomc_H3": "purple", "Nomc_H2": "orange",
+                    "Nomc_H1": "orange", "Nomc_H0": "brown",  "LOC":"cyan", "GPE": "lime",  "PER": "pink", "Trig_PLU": "olive" }
+
+    options = {"colors": label_colors, "ents": selected_labels}
+
+    # Filter out entities with a text length of less than 3
+    ents = [ent for ent in doc.ents if len(ent.text) > 2]
+    doc.ents = ents
+
+    html = displacy.render(doc, style="ent", options=options, jupyter=False)
+
+    st.markdown(f"Segment ID: {segment_number}", unsafe_allow_html=True)
+    st.markdown(html, unsafe_allow_html=True)
+    st.markdown("\n\n----------------------\n\n", unsafe_allow_html=True)
+
+
 
 
 if __name__ == '__main__':
@@ -154,6 +197,7 @@ if __name__ == '__main__':
         labels = {"Nomc_H6": "red", "Nomc_H5": "blue", "Nomc_H4": "green", "Nomc_H3": "purple", "Nomc_H2": "orange",
                   "Nomc_H1": "orange", "Nomc_H0": "brown", "LOC":"cyan", "GPE": "lime", "PER": "pink", "Trig_PLU": "olive"}
         selected_labels = st.multiselect("Select labels to display", options=labels.keys(), default=list(labels.keys()))
+        #selected_labels = [l for l in selected_labels if len(l)>2]
 
     entities_counter = Counter()
 
@@ -164,18 +208,17 @@ if __name__ == '__main__':
             _doc = spacy.tokens.Doc(nlp.vocab).from_bytes(_doc_bytes)  # Reconstruct the Doc object from bytes
             segments_cache[(label, segment_number)] = _doc
             entities = get_entities_json(_doc, selected_labels)
+            print("****: ", entities)
             entities_cache[(label, segment_number)] = entities  # Cache entities
         else:
             _doc = segments_cache[(label, segment_number)]  # Retrieve the Doc object from cache
             entities = entities_cache[(label, segment_number)]  # Retrieve entities from cache
 
         if label == selected_segment:
+            #_doc = Doc(_doc.vocab, words=[t.text for t in _doc], spaces=[t.whitespace_ for t in _doc])
+
             display(_doc, selected_labels, segment_number)
             entities_counter.update([ent[2] for ent in entities.values()])  # Increment the count of each entity label
-
-    #fig = go.Figure(data=[go.Pie(labels=list(entities_counter.keys()), values=list(entities_counter.values()))])
-    #fig.update_layout(title_text='Entities Distribution')
-    #st.sidebar.plotly_chart(fig)
 
     fig = go.Figure(data=[go.Pie(labels=list(entities_counter.keys()),
                              values=list(entities_counter.values()),
