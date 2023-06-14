@@ -19,7 +19,7 @@ state = st.session_state
 # Load the model
 @st.cache_data
 def load_model():
-    return spacy.load("herellesmdfull")
+    return spacy.load("herellesmdfullextend")
 
 nlp = load_model()  # Load the model globally
 
@@ -70,6 +70,15 @@ def get_table_download_link_json(entities_cache):
     json_data = json.dumps(entities)  # Convert entities dictionary to JSON
     b64 = base64.b64encode(json_data.encode()).decode()  # some strings <-> bytes conversions necessary here
     href = f'<a href="data:file/json;base64,{b64}" download="entities.json" target="_blank">Download entities JSON</a>'
+    return href
+
+def get_table_download_entities_counter(entities_counter):
+    """
+    Generates a link to download the entities JSON
+    """
+    json_data = json.dumps(entities_counter)  # Convert entities dictionary to JSON
+    b64 = base64.b64encode(json_data.encode()).decode()  # some strings <-> bytes conversions necessary here
+    href = f'<a href="data:file/json;base64,{b64}" download="entities.json" target="_blank">Download entities Count</a>'
     return href
 
 
@@ -219,6 +228,7 @@ if __name__ == '__main__':
 
             display(_doc, selected_labels, segment_number)
             entities_counter.update([ent[2] for ent in entities.values()])  # Increment the count of each entity label
+            #st.write("entities_counter :",  entities_counter)
 
     fig = go.Figure(data=[go.Pie(labels=list(entities_counter.keys()),
                              values=list(entities_counter.values()),
@@ -237,3 +247,6 @@ if __name__ == '__main__':
 
     with st.sidebar:
         st.markdown(get_table_download_link_json(entities_cache), unsafe_allow_html=True)
+
+    with st.sidebar:
+        st.markdown(get_table_download_entities_counter(entities_counter), unsafe_allow_html=True)

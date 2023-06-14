@@ -2,12 +2,12 @@ import spacy
 import pandas as pd
 
 
-#python -m spacy download fr_core_news_md
+
 def load_model_():
     return spacy.load("fr_core_news_sm")
 
 def build_model():
-    dfs = [pd.read_csv('data/H{}.csv'.format(i)) for i in range(7)]
+    dfs = [pd.read_csv('data/H{}_extend.csv'.format(i)) for i in range(7)]
     labels = ['Nomc_H{}'.format(i) for i in range(7)]
     nlp = load_model_()
     nlp.add_pipe("entity_ruler", config={"overwrite_ents": True})
@@ -19,14 +19,14 @@ def build_model():
             pattern = [{"LEMMA": token.lemma_} for token in doc]
             ruler.add_patterns([{"label": label, "pattern": pattern}])
 
-    nlp.to_disk("herellesmd")
+    nlp.to_disk("herellesmdextend")
 
 def load_herelles_model_():
-    return spacy.load("herellesmd")
+    return spacy.load("herellesmdextend")
 
 
 def addPattern_trigger():
-    df = pd.read_csv("data/plu_trigger.csv")
+    df = pd.read_csv("data/plu_trigger_extend.csv")
     nlp = load_herelles_model_()
 
     if 'entity_ruler' not in nlp.pipe_names:
@@ -38,7 +38,7 @@ def addPattern_trigger():
         doc = nlp(verb.lower())
         pattern = [{"LEMMA": token.lemma_} for token in doc]
         ruler.add_patterns([{"label": "Trig_PLU", "pattern": pattern}])
-    nlp.to_disk("herellesmdfull")
+    nlp.to_disk("herellesmdfullextend")
 
 
 if __name__ == "__main__":

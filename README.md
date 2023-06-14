@@ -1,7 +1,7 @@
-# rse_text
+# Herelles rules detector
 
 - install **spacy**
-
-- install **streamlit**
-
-- install **gensim**
+-  install **streamlit**
+- install **beautifulsoup4**
+- install **pandas**
+- install **plotly**
