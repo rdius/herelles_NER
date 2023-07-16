@@ -44,7 +44,7 @@ def handle_uploaded_file(file):
 def parse_text(text):
     sections = text.split(">>>")
     labelled_sections = []
-    for i, section in enumerate(sections, 1):
+    for i, section in enumerate(sections, 0):
         lines = section.strip().split('\n', 1)
         if len(lines) > 1:
             label, text = lines
