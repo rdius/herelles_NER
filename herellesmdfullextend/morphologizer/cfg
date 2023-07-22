@@ -1,5 +1,6 @@
 {
   "extend":false,
+  "label_smoothing":0.0,
   "labels_morph":{
     "POS=PROPN":"",
     "Gender=Fem|Number=Sing|POS=DET|PronType=Dem":"Gender=Fem|Number=Sing|PronType=Dem",

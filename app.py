@@ -7,7 +7,7 @@ import json
 import base64
 from bs4 import BeautifulSoup
 from spacy.tokens import Doc
-
+import pandas as pd
 
 st.set_page_config(layout="wide")
 
@@ -85,7 +85,13 @@ def get_table_download_entities_counter(entities_counter):
     href = f'<a href="data:file/json;base64,{b64}" download="entities.json" target="_blank">Download entities Count</a>'
     return href
 
-
+def get_processed_text():
+    with open('processed_text.txt') as f:
+        data_ = f.read()
+    # some strings <-> bytes conversions necessary here
+    b64 = base64.b64encode(data_.encode()).decode()
+    href = f'<a href="data:file/txt;base64,{b64}" download="processed_text.txt">"Download Processed Data"</a>'
+    return href
 
 def get_entities_json__(doc, labels):
     """
@@ -142,10 +148,6 @@ def get_entities_json(doc, labels, segment_number):
                         ent_dict[segment_number][ent.label_][ent.text] = [line, ent.start_char, ent.end_char]
     return ent_dict
 
-
-
-
-
 def display__(doc, selected_labels, segment_number):
     label_colors = {"Nomc_H6": "red", "Nomc_H5": "blue", "Nomc_H4": "green", "Nomc_H3": "purple", "Nomc_H2": "orange",
                     "Nomc_H1": "orange", "Nomc_H0": "brown",  "LOC":"cyan", "GPE": "lime",  "PER": "pink", "Trig_PLU": "olive" }
@@ -174,7 +176,7 @@ def display___(doc, selected_labels, segment_number):
     st.markdown("\n\n----------------------\n\n", unsafe_allow_html=True)
 
 
-def display(doc, selected_labels, segment_number):
+def displayok(doc, selected_labels, segment_number):
     #doc = Doc(doc.vocab, words=[t.text for t in doc], spaces=[t.whitespace_ for t in doc])
 
     label_colors = {"Nomc_H6": "red", "Nomc_H5": "blue", "Nomc_H4": "green", "Nomc_H3": "purple", "Nomc_H2": "orange",
@@ -193,6 +195,24 @@ def display(doc, selected_labels, segment_number):
     st.markdown("\n\n----------------------\n\n", unsafe_allow_html=True)
 
 
+def display(doc, selected_labels, segment_number):
+    #doc = Doc(doc.vocab, words=[t.text for t in doc], spaces=[t.whitespace_ for t in doc])
+
+    label_colors = {"Nomc_H6": "red", "Nomc_H5": "blue", "Nomc_H4": "green", "Nomc_H3": "purple", "Nomc_H2": "orange",
+                    "Nomc_H1": "orange", "Nomc_H0": "brown",  "LOC":"cyan", "GPE": "lime",  "PER": "pink", "Trig_PLU": "olive" }
+
+    options = {"colors": label_colors, "ents": selected_labels}
+
+    # Filter out entities with a text length of less than 3
+    ents = [ent for ent in doc.ents if len(ent.text) > 2]
+    doc.ents = ents
+
+    html = displacy.render(doc, style="ent", options=options, jupyter=False)
+
+    st.markdown(f"Segment ID: {segment_number}", unsafe_allow_html=True)
+    st.markdown(html, unsafe_allow_html=True)
+    st.markdown("\n\n----------------------\n\n", unsafe_allow_html=True)
+    return segment_number, doc
 
 
 if __name__ == '__main__':
@@ -284,6 +304,11 @@ if __name__ == '__main__':
             # Update entities_counter
             for label, entity_dict in entities[segment_number].items():
                 entities_counter[label] += len(entity_dict)
+        with open('processed_text.txt', 'a') as the_file:
+            the_file.write('\n')
+            the_file.write("*****Segement : " + str(segment_number))
+            the_file.write(text)
+            the_file.write('\n')
 
     fig = go.Figure(data=[go.Pie(labels=list(entities_counter.keys()),
                              values=list(entities_counter.values()),
@@ -306,3 +331,7 @@ if __name__ == '__main__':
 
     with st.sidebar:
         st.markdown(get_table_download_entities_counter(entities_counter), unsafe_allow_html=True)
+
+    #with st.sidebar:
+    #    tmp_download_link = get_processed_text()
+    #    st.markdown(tmp_download_link, unsafe_allow_html=True)
