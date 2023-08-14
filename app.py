@@ -85,6 +85,7 @@ def get_table_download_entities_counter(entities_counter):
     href = f'<a href="data:file/json;base64,{b64}" download="entities.json" target="_blank">Download entities Count</a>'
     return href
 
+
 def get_processed_text():
     with open('processed_text.txt') as f:
         data_ = f.read()
