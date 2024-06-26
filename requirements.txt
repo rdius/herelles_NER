@@ -1,5 +1,5 @@
 beautifulsoup4==4.10.0
-numpy
+numpy==1.20.1
 pandas
 plotly==5.4.0
 spacy==3.5.1
